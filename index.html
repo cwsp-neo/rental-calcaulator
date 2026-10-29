@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#17293D">
+<meta name="description" content="KBR 렌탈료 산정 계산기 — 물건대금과 조건을 입력하면 월 렌탈료를 바로 계산합니다.">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="렌탈료 계산기">
+<title>렌탈료 계산기</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#EDF1F6; --surface:#FFFFFF; --line:#DCE2EA; --text:#17293D; --muted:#5E6B7B;
+  --panel:#17293D; --panel-text:#FFFFFF; --panel-muted:#A3B3C6; --panel-line:#2E4259;
+  --purple:#6B4BC7; --teal:#16A08F; --orange:#F0912E; --pink:#E8558D; --blue:#2E86C8;
+  --accent:#6B4BC7; --chip:#EDF1F6; --chip-on:#16A08F; --chip-on-text:#FFFFFF;
+  --pill:#FFFFFF; --pill-text:#17293D; --pos:#16A08F; --neg:#E8558D; --err:#E8558D; --focus:#16A08F;
+  --sum-text:#FFFFFF;
+  color-scheme:light;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --bg:#0C1520; --surface:#15212F; --line:#25344A; --text:#E8EDF3; --muted:#93A2B5;
+    --panel:#1B3049; --panel-text:#FFFFFF; --panel-muted:#9FB0C4; --panel-line:#2F4762;
+    --accent:#A58BF0; --chip:#1E2C3E; --chip-on:#1DB5A2; --chip-on-text:#FFFFFF;
+    --pill:#FFFFFF; --pill-text:#17293D; --pos:#16A08F; --neg:#E8558D; --err:#F27AA6; --focus:#1DB5A2;
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0C1520; --surface:#15212F; --line:#25344A; --text:#E8EDF3; --muted:#93A2B5;
+  --panel:#1B3049; --panel-text:#FFFFFF; --panel-muted:#9FB0C4; --panel-line:#2F4762;
+  --accent:#A58BF0; --chip:#1E2C3E; --chip-on:#1DB5A2; --chip-on-text:#FFFFFF;
+  --pill:#FFFFFF; --pill-text:#17293D; --pos:#16A08F; --neg:#E8558D; --err:#F27AA6; --focus:#1DB5A2;
+  color-scheme:dark;
+}
+*,*::before,*::after{box-sizing:border-box}
+html{scroll-padding-top:calc(env(safe-area-inset-top,0px) + 190px)}
+body{margin:0;background:var(--bg);color:var(--text);
+  font-family:"Noto Sans KR","Apple SD Gothic Neo","Malgun Gothic",system-ui,sans-serif;
+  font-size:16px;line-height:1.5;-webkit-text-size-adjust:100%;font-variant-numeric:tabular-nums}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--panel)}
+.wrap{max-width:520px;margin:0 auto}
+
+/* 결과 패널 — 마감보고 헤더(네이비)와 동일 계열 */
+.result{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--panel);color:var(--panel-text);
+  padding:14px 20px 16px;border-radius:0 0 20px 20px;box-shadow:0 6px 18px rgba(23,41,61,.22)}
+.result::after{content:"";position:absolute;left:20px;right:20px;bottom:0;height:4px;border-radius:4px 4px 0 0;
+  background:linear-gradient(90deg,var(--purple) 0 20%,var(--teal) 20% 40%,var(--orange) 40% 60%,var(--pink) 60% 80%,var(--blue) 80% 100%)}
+.result-top{display:flex;justify-content:space-between;align-items:center;gap:12px}
+.title{font-size:14px;font-weight:700;color:var(--panel-muted);margin:0}
+.gp{font-size:13px;font-weight:700;padding:3px 12px;border-radius:999px;background:var(--pill);color:var(--pill-text);white-space:nowrap}
+.gp b{font-weight:800}
+.gp.pos b{color:var(--pos)} .gp.neg b{color:var(--neg)}
+.monthly{margin:6px 0 2px;font-size:clamp(34px,10.5vw,46px);font-weight:800;letter-spacing:-.02em;line-height:1.1;word-break:keep-all}
+.monthly small{font-size:.42em;font-weight:500;margin-left:4px;color:var(--panel-muted);letter-spacing:0}
+.sub{font-size:13px;color:var(--panel-muted);margin:0 0 12px}
+.pair{display:flex;justify-content:space-between;align-items:baseline;gap:12px;border-top:1px solid var(--panel-line);padding-top:10px}
+.pair span{font-size:13px;color:var(--panel-muted)}
+.pair strong{font-size:19px;font-weight:700;word-break:keep-all}
+.empty .monthly,.empty .pair strong{color:var(--panel-muted)}
+
+/* 입력 — 항목별 색 띠는 보고서 KPI 카드 색 순서를 따름 */
+main{padding:18px 16px 32px}
+.field{--c:var(--teal);background:var(--surface);border:1px solid var(--line);border-left:5px solid var(--c);border-radius:10px;padding:12px 14px;margin-bottom:10px}
+#f-price{--c:var(--purple)} #f-months{--c:var(--teal)}
+#f-rate,#f-reserve,#f-sec{--c:var(--orange)}
+#f-dep,#f-ag{--c:var(--blue)}
+.field label{display:flex;justify-content:space-between;font-size:14px;font-weight:700;color:var(--muted)}
+.field label em{font-style:normal;font-weight:700;font-size:13px;color:var(--accent)}
+.inrow{display:flex;align-items:center;gap:6px;margin-top:4px}
+.inrow input{flex:1;min-width:0;width:100%;border:0;background:transparent;color:var(--text);font:inherit;font-size:24px;font-weight:700;
+  padding:4px 0;outline:none;font-variant-numeric:tabular-nums}
+.inrow input::placeholder{color:var(--line);font-weight:500}
+.unit{font-size:16px;font-weight:500;color:var(--muted)}
+.field:focus-within{border-color:var(--focus);border-left-color:var(--c);box-shadow:0 0 0 3px color-mix(in srgb,var(--focus) 20%,transparent)}
+.field.bad{border-color:var(--err);border-left-color:var(--err)}
+.msg{font-size:12.5px;color:var(--err);margin:4px 0 0;display:none}
+.field.bad .msg{display:block}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.chips button{appearance:none;border:0;background:var(--chip);color:var(--text);font:inherit;font-size:14px;font-weight:500;
+  padding:7px 12px;border-radius:8px;cursor:pointer;min-height:36px}
+.chips button[aria-pressed="true"]{background:var(--chip-on);color:var(--chip-on-text);font-weight:700}
+.chips button:focus-visible,.btn:focus-visible,summary:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+.grid3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.grid3 .field,.grid2 .field{min-width:0}
+.grid3 .field{padding:10px 12px;margin-bottom:10px}
+.grid3 .field label{font-size:12.5px;line-height:1.3;min-height:2.6em;align-items:flex-start}
+.grid3 .inrow input{font-size:20px}
+.grid2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.grid2 .field{margin-bottom:10px}
+.grid2 .inrow input{font-size:20px}
+
+/* 접는 영역 — 보고서 섹션 헤더 띠 */
+details{background:var(--surface);border:1px solid var(--line);border-radius:10px;margin-bottom:10px;overflow:hidden}
+summary{list-style:none;cursor:pointer;padding:12px 14px;font-weight:700;display:flex;justify-content:space-between;align-items:center;
+  background:var(--h,var(--teal));color:var(--sum-text)}
+#detail{--h:var(--teal)}
+summary::-webkit-details-marker{display:none}
+summary::after{content:"";width:8px;height:8px;border-right:2px solid currentColor;border-bottom:2px solid currentColor;transform:rotate(45deg);transition:transform .2s;margin-right:4px}
+details[open] summary::after{transform:rotate(-135deg)}
+summary span{font-size:13px;font-weight:500;opacity:.9;margin-left:auto;margin-right:12px}
+.inner{padding:14px}
+.inner .note{font-size:12.5px;color:var(--muted);margin:10px 0 0}
+dl{margin:0;display:grid;grid-template-columns:1fr auto;row-gap:9px;column-gap:12px;font-size:14.5px}
+dt{color:var(--muted)} dd{margin:0;text-align:right;font-weight:700}
+dl hr{grid-column:1/-1;border:0;border-top:1px dashed var(--line);margin:2px 0}
+
+.actions{display:grid;grid-template-columns:1fr auto;gap:8px;margin-top:14px}
+.btn{appearance:none;border:0;border-radius:10px;font:inherit;font-weight:700;font-size:16px;padding:14px;cursor:pointer;min-height:50px}
+.btn.primary{background:var(--teal);color:#FFFFFF}
+.btn.ghost{background:var(--surface);color:var(--text);border:1px solid var(--line);padding:14px 18px}
+.foot{font-size:12px;color:var(--muted);text-align:center;margin-top:18px}
+.toast{position:fixed;left:50%;bottom:calc(24px + env(safe-area-inset-bottom,0px));transform:translate(-50%,20px);opacity:0;
+  background:var(--panel);color:#FFFFFF;padding:10px 16px;border-radius:10px;font-size:14px;transition:.25s;pointer-events:none}
+.toast.show{opacity:1;transform:translate(-50%,0)}
+
+/* 조건제안서 시트 */
+.sheet{position:fixed;inset:0;z-index:20;display:flex;align-items:flex-end;justify-content:center}
+.sheet[hidden]{display:none}
+.sheet-bg{position:absolute;inset:0;background:rgba(12,21,32,.55)}
+.sheet-card{position:relative;width:100%;max-width:520px;max-height:calc(100% - env(safe-area-inset-top,0px) - 12px);overflow:auto;
+  background:var(--bg);border-radius:18px 18px 0 0;padding:16px 16px calc(16px + env(safe-area-inset-bottom,0px))}
+.sheet-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
+.sheet-head h2{margin:0;font-size:18px;font-weight:800}
+.x{appearance:none;border:0;background:var(--chip);color:var(--text);width:36px;height:36px;border-radius:50%;font-size:22px;line-height:1;cursor:pointer}
+#f-to,#f-ref{--c:var(--panel)}
+#f-to .inrow input,#f-ref .inrow input{font-size:18px}
+.preview{background:#FFFFFF;border:1px solid var(--line);border-radius:8px;overflow:hidden;margin-top:2px}
+.preview img{display:block;width:100%;height:auto}
+.actions.one{grid-template-columns:1fr}
+body.lock{overflow:hidden}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+@media (max-width:360px){.grid3{grid-template-columns:repeat(2,minmax(0,1fr))}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <section class="result empty" id="result" aria-live="polite">
+    <div class="result-top">
+      <p class="title">월 렌탈료 (VAT 포함)</p>
+      <span class="gp" id="gpChip">GP <b id="gpPct">–</b></span>
+    </div>
+    <div class="monthly" id="monthly">–<small>원</small></div>
+    <p class="sub" id="subline">물건대금을 입력하면 바로 계산됩니다</p>
+    <div class="pair">
+      <span>총 렌탈료 (VAT 포함)</span><strong id="total">–</strong>
+    </div>
+  </section>
+
+  <main>
+    <div class="field" id="f-price">
+      <label for="price">물건대금 <em id="priceKo"></em></label>
+      <div class="inrow"><input id="price" inputmode="numeric" autocomplete="off" placeholder="0" aria-describedby="m-price"><span class="unit">원</span></div>
+      <div class="chips" aria-label="금액 빠르게 더하기">
+        <button type="button" data-add="1000000">+100만</button>
+        <button type="button" data-add="10000000">+1,000만</button>
+        <button type="button" data-add="100000000">+1억</button>
+        <button type="button" data-clear>지우기</button>
+      </div>
+      <p class="msg" id="m-price">물건대금을 입력하세요.</p>
+    </div>
+
+    <div class="field" id="f-months">
+      <label for="months">렌탈기간</label>
+      <div class="inrow"><input id="months" inputmode="numeric" autocomplete="off" aria-describedby="m-months"><span class="unit">개월</span></div>
+      <div class="chips" id="monthChips">
+        <button type="button" data-m="12">12</button><button type="button" data-m="24">24</button>
+        <button type="button" data-m="36">36</button><button type="button" data-m="48">48</button>
+        <button type="button" data-m="60">60</button>
+      </div>
+      <p class="msg" id="m-months">렌탈기간은 1~60개월로 입력하세요.</p>
+    </div>
+
+    <div class="grid3">
+      <div class="field" id="f-rate">
+        <label for="rate">상환<br>이자율</label>
+        <div class="inrow"><input id="rate" inputmode="decimal" autocomplete="off"><span class="unit">%</span></div>
+      </div>
+      <div class="field" id="f-reserve">
+        <label for="reserve">금융사<br>충당금</label>
+        <div class="inrow"><input id="reserve" inputmode="decimal" autocomplete="off"><span class="unit">%</span></div>
+      </div>
+      <div class="field" id="f-sec">
+        <label for="sec">유동화<br>금리</label>
+        <div class="inrow"><input id="sec" inputmode="decimal" autocomplete="off"><span class="unit">%</span></div>
+      </div>
+    </div>
+
+    <div class="grid2">
+      <div class="field" id="f-dep">
+        <label for="dep">상계보증금율</label>
+        <div class="inrow"><input id="dep" inputmode="decimal" autocomplete="off"><span class="unit">%</span></div>
+      </div>
+      <div class="field" id="f-ag">
+        <label for="ag">AG수수료</label>
+        <div class="inrow"><input id="ag" inputmode="decimal" autocomplete="off"><span class="unit">%</span></div>
+      </div>
+    </div>
+
+    <details id="detail">
+      <summary>상세 내역</summary>
+      <div class="inner">
+        <dl>
+          <dt>상계보증금 (선수금)</dt><dd id="d-deposit">–</dd>
+          <dt>실납부 월렌탈료</dt><dd id="d-net">–</dd>
+          <hr>
+          <dt>채권할인율</dt><dd id="d-disc">–</dd>
+          <dt>채권매각금액</dt><dd id="d-sale">–</dd>
+          <dt>금융사 충당금</dt><dd id="d-res">–</dd>
+          <dt>AG수수료</dt><dd id="d-ag">–</dd>
+          <dt>매각수익</dt><dd id="d-profit">–</dd>
+          <dt>확정 VAT</dt><dd id="d-vat">–</dd>
+          <hr>
+          <dt>GP 금액</dt><dd id="d-gp">–</dd>
+        </dl>
+        <p class="note">실납부 월렌탈료는 상계보증금을 렌탈기간으로 나눠 매월 차감한 금액입니다. 입력한 이자율·보증금율·수수료는 이 기기에 저장되어 다음 접속 때도 유지됩니다.</p>
+      </div>
+    </details>
+
+    <div class="actions">
+      <button class="btn primary" id="copy" type="button">렌탈 조건제안서</button>
+      <button class="btn ghost" id="reset" type="button">기본값</button>
+    </div>
+    <p class="foot">KBR 렌탈료 산정파일(스케줄 시트) 산식 기준 · 원 단위 절사/올림 동일 적용</p>
+  </main>
+</div>
+<div class="sheet" id="sheet" hidden>
+  <div class="sheet-bg" data-close></div>
+  <div class="sheet-card" role="dialog" aria-modal="true" aria-labelledby="sheetTitle">
+    <div class="sheet-head"><h2 id="sheetTitle">렌탈 조건제안서</h2><button type="button" class="x" data-close aria-label="닫기">×</button></div>
+    <div class="grid2">
+      <div class="field" id="f-to"><label for="to">수신</label><div class="inrow"><input id="to" autocomplete="off" placeholder="VIP"><span class="unit">귀중</span></div></div>
+      <div class="field" id="f-ref"><label for="ref">참조</label><div class="inrow"><input id="ref" autocomplete="off" placeholder="선택 입력"></div></div>
+    </div>
+    <div class="preview"><img id="propImg" alt="렌탈 조건제안서 미리보기"></div>
+    <div class="actions one"><button class="btn primary" id="saveImg" type="button">이미지로 저장</button></div>
+  </div>
+</div>
+<div class="toast" id="toast" role="status"></div>
+
+<script>
+/* ===== 계산 엔진: 렌탈료_산정파일.xlsx '스케줄' 시트 산식 이식 ===== */
+const xint = x => Math.trunc(Math.round(x*1e6)/1e6);           // Excel INT/TRUNC (15자리 정밀도 보정)
+function roundUp(x,d){const f=Math.pow(10,d);const v=Math.round(x*f*1e6)/1e6;return (v>=0?Math.ceil(v):Math.floor(v))/f;}
+const PMT=(r,n,p)=> r===0 ? -p/n : -p*r/(1-Math.pow(1+r,-n));
+const PV=(r,n,p)=> n<=0 ? 0 : (r===0 ? -p*n : -p*(1-Math.pow(1+r,-n))/r);
+
+function calc(o){
+  const E3=o.price, D7=o.months, D11=o.rate, M5=o.reserve, Q8=o.sec, D4=o.dep, M4=o.ag;
+  const D6=0, M9=0, M3=0;                       // 거치기간·잔존비율·공증비용 (파일 기본값 0)
+  const D8=D6+D7;
+  const D3=xint(E3/1.1);                         // 물건대금 공급가액
+  const E4=E3*D4;                                // 상계보증금
+  const D14=roundUp(D3*0,-3), E14=xint(D14*1.1); // 거치기간 납부액(0)
+  const E11=PMT(D11/12,D7,-1);
+  const D15=roundUp(D3*E11+D3*M9*D11/12,-3);     // 월 공급가액 (천원 올림)
+  const E15=xint(D15*1.1);                       // 월 렌탈료 VAT포함
+  const F15=E15-E4/D8;                           // 차감식 실납부
+  let H=D3,sF=0,sG=0,sI=0,sJ=0,firstJ=0;
+  for(let k=1;k<=D8;k++){
+    let E,D;
+    if(k<=D6){E=D14;D=E;}
+    else if(k<D8){E=D15;D=xint(H*D11/12);}
+    else{E=(D11===0?H:D15);D=(D11===0?0:D15-H+M3);}
+    const F=xint(E*0.1), G=E+F; H-= (E-D);
+    const I=k<D8?xint(E4/D8):E4-sI, J=E-I+F;
+    sF+=F;sG+=G;sI+=I;sJ+=J; if(k===1) firstJ=J;
+  }
+  const N8=sJ;                                   // 팩토링채권액 = 총 렌탈채권액
+  const N5=xint(N8*M5), N4=M4*E3, N3=N8*M3;
+  const R10=PV(Q8/12,D6,-E14)+PV(Q8/12,D7,-F15);
+  const Q9=roundUp(1-R10/N8,4);                  // 채권할인율
+  const Q10=N8-N8*Q9;                            // 채권매각(할인 후 금액)
+  const Q21=sF-E3/1.1*0.1;                       // 확정VAT = 매출VAT − 매입VAT
+  const Q34=Q10-E3-N4+E4-(N5+N3);                // 매각수익
+  const Q36=Q34-Q21;                             // GP금액
+  return {monthly:E15,net:firstJ,total:sG,receivable:N8,deposit:E4,disc:Q9,sale:Q10,res:N5,ag:N4,profit:Q34,vat:Q21,gp:Q36,gpPct:Q36/sG};
+}
+
+/* ===== UI ===== */
+const $=id=>document.getElementById(id);
+const won=n=>Math.round(n).toLocaleString('ko-KR');
+const DEF={months:36,rate:10,reserve:2,sec:8,dep:12,ag:0};
+const KEY='rental-calc-v1';
+function load(){try{return Object.assign({},DEF,JSON.parse(localStorage.getItem(KEY)||'{}'));}catch(e){return {...DEF};}}
+function save(){try{localStorage.setItem(KEY,JSON.stringify({months:num($('months').value),rate:num($('rate').value),reserve:num($('reserve').value),sec:num($('sec').value),dep:num($('dep').value),ag:num($('ag').value)}));}catch(e){}}
+const num=v=>{const s=String(v).replace(/[^\d.]/g,'');return s===''?NaN:parseFloat(s);};
+
+function koAmount(n){
+  if(!n) return '';
+  const eok=Math.floor(n/1e8), man=Math.floor((n%1e8)/1e4), rest=n%1e4;
+  let s=''; if(eok) s+=eok.toLocaleString('ko-KR')+'억 '; if(man) s+=man.toLocaleString('ko-KR')+'만'; 
+  if(!man&&!eok) s=rest.toLocaleString('ko-KR');
+  return s.trim()+'원';
+}
+function fmtPrice(){
+  const el=$('price'), raw=el.value.replace(/[^\d]/g,'').replace(/^0+(?=\d)/,'').slice(0,13);
+  const posFromEnd=el.value.length-(el.selectionEnd??el.value.length);
+  el.value=raw?Number(raw).toLocaleString('ko-KR'):'';
+  const p=Math.max(0,el.value.length-posFromEnd); try{el.setSelectionRange(p,p);}catch(e){}
+  $('priceKo').textContent=koAmount(Number(raw||0));
+}
+function cleanPct(el){el.value=el.value.replace(/[^\d.]/g,'').replace(/(\..*)\./g,'$1');}
+
+let last=null;
+function update(){
+  const price=num($('price').value), months=num($('months').value);
+  const p={rate:num($('rate').value),reserve:num($('reserve').value),sec:num($('sec').value),dep:num($('dep').value),ag:num($('ag').value)};
+  document.querySelectorAll('#monthChips button').forEach(b=>b.setAttribute('aria-pressed',String(Number(b.dataset.m)===months)));
+  const monthsOk=Number.isInteger(months)&&months>=1&&months<=60;
+  $('f-months').classList.toggle('bad',$('months').value!==''&&!monthsOk);
+  const pctOk=['rate','reserve','sec','dep','ag'].every(k=>!isNaN(p[k])&&p[k]>=0&&p[k]<100);
+  const map={rate:'f-rate',reserve:'f-reserve',sec:'f-sec',dep:'f-dep',ag:'f-ag'};
+  for(const k in map) $(map[k]).classList.toggle('bad',isNaN(p[k])||p[k]<0||p[k]>=100);
+  save();
+  const ok=price>0&&monthsOk&&pctOk;
+  $('result').classList.toggle('empty',!ok);
+  if(!ok){
+    last=null;
+    $('monthly').innerHTML='–<small>원</small>';['total','gpPct'].forEach(i=>$(i).textContent='–');
+    $('gpChip').className='gp';
+    ['deposit','net','disc','sale','res','ag','profit','vat','gp'].forEach(i=>$('d-'+i).textContent='–');
+    $('subline').textContent=!(price>0)?'물건대금을 입력하면 바로 계산됩니다':'입력값을 확인하세요';
+    return;
+  }
+  const r=calc({price,months,rate:p.rate/100,reserve:p.reserve/100,sec:p.sec/100,dep:p.dep/100,ag:p.ag/100});
+  last={price,months,...r};
+  $('monthly').innerHTML=won(r.monthly)+'<small>원</small>';
+  $('subline').textContent=`${months}개월 · 실납부 월 ${won(r.net)}원 (보증금 차감)`;
+  $('total').textContent=won(r.total)+'원';
+  $('gpPct').textContent=(r.gpPct*100).toFixed(2)+'%';
+  $('gpChip').className='gp '+(r.gp>=0?'pos':'neg');
+  $('d-deposit').textContent=won(r.deposit)+'원';
+  $('d-net').textContent=won(r.net)+'원';
+  $('d-disc').textContent=(r.disc*100).toFixed(2)+'%';
+  $('d-sale').textContent=won(r.sale)+'원';
+  $('d-res').textContent=won(r.res)+'원';
+  $('d-ag').textContent=won(r.ag)+'원';
+  $('d-profit').textContent=won(r.profit)+'원';
+  $('d-vat').textContent=won(r.vat)+'원';
+  $('d-gp').textContent=won(r.gp)+'원';
+}
+
+
+/* ===== 렌탈 조건제안서 이미지 (고객용_렌탈_조건제안서.pdf 레이아웃, A4 기준 pt 좌표) ===== */
+const LOGO_SRC='data:image/jpeg;base64,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';
+const logoImg=new Image(); logoImg.src=LOGO_SRC;
+const FONT='"Noto Sans KR","Apple SD Gothic Neo","Malgun Gothic",sans-serif';
+function today(){const d=new Date();const p=n=>String(n).padStart(2,'0');return `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())}`;}
+async function fontsReady(sample){
+  try{await Promise.all(['400','700'].map(w=>document.fonts.load(`${w} 20px "Noto Sans KR"`,sample)));}catch(e){}
+  if(!logoImg.complete) await new Promise(r=>{logoImg.onload=r;logoImg.onerror=r;});
+}
+async function drawProposal(d){
+  const S=2.5, W=595, H=842;
+  const cv=document.createElement('canvas'); cv.width=W*S; cv.height=H*S;
+  const g=cv.getContext('2d'); g.scale(S,S);
+  g.fillStyle='#FFFFFF'; g.fillRect(0,0,W,H);
+  const depTxt=d.deposit>0?won(d.deposit):'-';
+  const rows=[
+    ['상품구분','렌탈','c','임대차계약(상거래)',0],
+    ['물건금액',won(d.price),'r','VAT 포함',0],
+    ['선납렌탈료',depTxt,'r',(d.depRate*100).toFixed(2)+'%',0],
+    ['렌탈기간',d.months+' 개월','c','',0],
+    ['실납부 월렌탈료',won(d.net),'r','VAT 포함',1],
+    ['실납부 총렌탈료',won(d.net*d.months),'r','VAT 포함',1],
+    ['A/S','이용자 책임 및 제조사 기준에 따름','c','-',0],
+    ['중도해지인수금','잔여렌탈료의 100%','c','반납 불가',0],
+    ['종료 후 처리','무상양도','c','-',0]];
+  await fontsReady(rows.flat().join('')+'발송일자수신참조제목렌탈상품조건제안서귀사의무궁한발전을기원합니다아래와같이당사의렌탈조건을제안드리오니검토하여주시기바랍니다본은대출상품리스할부가아닌임대차계약으로신용채무미등재매월계산서발행처리경기도고양시덕양구동송로호연락처홈페이지구분내역비고'+d.to+d.ref);
+  const txt=(s,x,y,{size=10.5,bold=false,align='left',color='#000000'}={})=>{
+    g.font=`${bold?700:400} ${size}px ${FONT}`; g.fillStyle=color; g.textAlign=align; g.textBaseline='middle'; g.fillText(s,x,y);};
+  // 로고·주소
+  if(logoImg.naturalWidth) g.drawImage(logoImg,61,59,174,36.9);
+  txt('경기도 고양시 덕양구 동송로 30, 1504호',338,68.8,{size:9.3});
+  txt('연락처 010-9023-1467 / 홈페이지 : www.kbr.co.kr',338,88.8,{size:9.3});
+  // 문서 정보
+  const line=(x1,y1,x2,y2,w=1)=>{g.beginPath();g.lineWidth=w;g.strokeStyle='#000000';g.moveTo(x1,y1);g.lineTo(x2,y2);g.stroke();};
+  line(60,136.4,542.6,136.4,1.2); line(60,216.6,542.6,216.6,1.2);
+  const info=[['발송일자',today()],['수      신',(d.to||'VIP')+' 귀중'],['참      조',d.ref||''],['제      목','렌탈상품 조건제안서']];
+  info.forEach(([k,v],i)=>{const y=147+i*20; 
+    if(k.includes(' ')){const [a,b]=[k[0],k[k.length-1]];txt(a,109,y);txt(b,140,y);} else txt(k,109,y);
+    txt(v,200,y);});
+  txt('1. 귀사의 무궁한 발전을 기원합니다.',62,262);
+  txt('2. 아래와 같이 당사의 렌탈조건을 제안드리오니 검토하여주시기 바랍니다.',62,297.5);
+  // 표
+  const X=[60,197.8,405,542.6], top=323.6, rh=24.1, hh=24;
+  g.fillStyle='rgb(141,180,226)'; g.fillRect(X[0],top,X[3]-X[0],hh);
+  rows.forEach((r,i)=>{ if(r[4]){ g.fillStyle='rgb(220,230,241)'; g.fillRect(X[0],top+hh+i*rh,X[3]-X[0],rh);} });
+  const bottom=top+hh+rows.length*rh;
+  ['구분','내역','비고'].forEach((h,i)=>txt(h,(X[i]+X[i+1])/2,top+hh/2,{bold:true}));
+  rows.forEach((r,i)=>{
+    const cy=top+hh+i*rh+rh/2, b=!!r[4];
+    txt(r[0],(X[0]+X[1])/2,cy,{bold:b,align:'center'});
+    if(r[2]==='r') txt(r[1],X[2]-6,cy,{bold:b||i===1,align:'right'}); else txt(r[1],(X[1]+X[2])/2,cy,{align:'center'});
+    if(r[3]) txt(r[3],(X[2]+X[3])/2,cy,{bold:b,align:'center'});
+  });
+  for(let i=0;i<=rows.length+1;i++){const y=i===0?top:top+hh+(i-1)*rh; line(X[0],y,X[3],y,i===0||i===rows.length+1?1.3:0.7);}
+  X.forEach((x,i)=>line(x,top,x,bottom,i===0||i===3?1.3:0.7));
+  txt('■ 본 렌탈상품은 대출상품(리스, 할부)가 아닌 임대차 계약으로, 신용 채무 미등재',66,598,{size:10.5,bold:true});
+  txt('■ 매월 렌탈료 계산서 발행 처리',66,622,{size:10.5,bold:true});
+  return cv;
+}
+let propCanvas=null;
+async function openProposal(){
+  if(!last){toast('물건대금을 먼저 입력하세요');$('price').focus();return;}
+  $('sheet').hidden=false; document.body.classList.add('lock');
+  await renderProposal();
+}
+async function renderProposal(){
+  propCanvas=await drawProposal({...last,depRate:num($('dep').value)/100,to:$('to').value.trim(),ref:$('ref').value.trim()});
+  $('propImg').src=propCanvas.toDataURL('image/png');
+}
+function closeProposal(){$('sheet').hidden=true;document.body.classList.remove('lock');}
+async function saveProposal(){
+  if(!propCanvas) return;
+  const name=`렌탈조건제안서_${today().replace(/-/g,'')}.png`;
+  const blob=await new Promise(r=>propCanvas.toBlob(r,'image/png'));
+  const file=new File([blob],name,{type:'image/png'});
+  const mobile=matchMedia('(pointer:coarse)').matches;
+  if(mobile&&navigator.canShare&&navigator.canShare({files:[file]})){
+    try{await navigator.share({files:[file],title:'렌탈 조건제안서'});return;}catch(e){if(e.name==='AbortError')return;}
+  }
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=name; document.body.appendChild(a); a.click();
+  setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove();},1000); toast('이미지를 저장했습니다');
+}
+
+function toast(t){const el=$('toast');el.textContent=t;el.classList.add('show');clearTimeout(toast.t);toast.t=setTimeout(()=>el.classList.remove('show'),1800);}
+
+function init(){
+  const s=load();
+  $('months').value=s.months; $('rate').value=s.rate; $('reserve').value=s.reserve; $('sec').value=s.sec; $('dep').value=s.dep; $('ag').value=s.ag;
+  $('price').addEventListener('input',()=>{fmtPrice();update();});
+  ['rate','reserve','sec','dep','ag'].forEach(id=>$(id).addEventListener('input',e=>{cleanPct(e.target);update();}));
+  $('months').addEventListener('input',e=>{e.target.value=e.target.value.replace(/\D/g,'').slice(0,3);update();});
+  document.querySelectorAll('input').forEach(i=>i.addEventListener('focus',()=>setTimeout(()=>i.select(),0)));
+  document.querySelectorAll('[data-add]').forEach(b=>b.addEventListener('click',()=>{
+    const cur=num($('price').value)||0; $('price').value=String(cur+Number(b.dataset.add)); fmtPrice(); update();}));
+  document.querySelector('[data-clear]').addEventListener('click',()=>{$('price').value='';fmtPrice();update();$('price').focus();});
+  document.querySelectorAll('[data-m]').forEach(b=>b.addEventListener('click',()=>{$('months').value=b.dataset.m;update();}));
+  $('reset').addEventListener('click',()=>{
+    $('months').value=DEF.months;$('rate').value=DEF.rate;$('reserve').value=DEF.reserve;$('sec').value=DEF.sec;$('dep').value=DEF.dep;$('ag').value=DEF.ag;
+    update();toast('기본값으로 되돌렸습니다');});
+  $('copy').addEventListener('click',openProposal);
+  document.querySelectorAll('[data-close]').forEach(b=>b.addEventListener('click',closeProposal));
+  document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!$('sheet').hidden)closeProposal();});
+  let rt; ['to','ref'].forEach(id=>$(id).addEventListener('input',()=>{clearTimeout(rt);rt=setTimeout(renderProposal,250);}));
+  $('saveImg').addEventListener('click',saveProposal);
+  fmtPrice(); update();
+}
+init();
+if('serviceWorker' in navigator){window.addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));}
+</script>
+</body>
+</html>

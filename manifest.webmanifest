@@ -1,0 +1,17 @@
+{
+  "name": "KBR 렌탈료 계산기",
+  "short_name": "렌탈료 계산기",
+  "description": "물건대금과 조건을 입력하면 월 렌탈료와 총 렌탈료를 바로 계산합니다.",
+  "lang": "ko",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#EDF1F6",
+  "theme_color": "#17293D",
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icons/maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
